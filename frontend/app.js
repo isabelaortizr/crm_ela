@@ -44,24 +44,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadApp();
 });
 
-async function api(path, options = {}) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-    ...options
-  });
+// async function api(path, options = {}) {
+//   const response = await fetch(`${API_BASE_URL}${path}`, {
+//     headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+//     ...options
+//   });
 
-  if (!response.ok) {
-    let message = 'Error inesperado';
-    try {
-      const data = await response.json();
-      message = data.error || message;
-    } catch (_) {}
-    throw new Error(message);
-  }
+//   if (!response.ok) {
+//     let message = 'Error inesperado';
+//     try {
+//       const data = await response.json();
+//       message = data.error || message;
+//     } catch (_) {}
+//     throw new Error(message);
+//   }
 
-  if (response.status === 204) return null;
-  return response.json();
-}
+//   if (response.status === 204) return null;
+//   return response.json();
+// }
 
 async function loadApp() {
   try {
