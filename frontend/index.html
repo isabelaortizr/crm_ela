@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mi Negocio</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<header>
+  <h1>📦 ELA HERENCIA - ADMINISTRADOR </h1>
+  <span id="fecha-hdr"></span>
+</header>
+
+<nav>
+  <button class="active" data-tab="dashboard">Dashboard</button>
+  <button data-tab="inventario">Inventario</button>
+  <button data-tab="ventas">Ventas</button>
+  <button data-tab="movimientos">Mov. Inventario</button>
+  <button data-tab="nueva-venta">+ Nueva Venta</button>
+</nav>
+
+<main>
+  <div id="tab-dashboard" class="tab active">
+    <div class="metrics" id="dash-metrics"></div>
+    <div class="grid-2">
+      <div>
+        <div class="sh"><h2>Ventas recientes</h2></div>
+        <div class="tw table-scroll">
+          <table>
+            <thead><tr><th>Fecha</th><th>Producto</th><th>Variante</th><th class="r">Total</th></tr></thead>
+            <tbody id="dash-ventas"></tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div class="sh"><h2>Stock bajo (&le;1)</h2></div>
+        <div class="tw table-scroll">
+          <table>
+            <thead><tr><th>Producto</th><th>Variante</th><th class="c">Stock</th></tr></thead>
+            <tbody id="dash-stock"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-inventario" class="tab">
+    <div class="sh">
+      <div><h2>Inventario</h2><p id="inv-sub"></p></div>
+      <button class="btn bp" id="btn-nuevo-producto">+ Nuevo Producto</button>
+    </div>
+    <div class="tw table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:24px;"></th><th>ID</th><th>Nombre</th><th>Categoría</th>
+            <th class="r">Costo</th><th class="r">Precio</th><th class="r">Margen</th>
+            <th class="c">Stock</th><th>Proveedor</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody-inv"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="tab-ventas" class="tab">
+    <div class="sh"><div><h2>Historial de Ventas</h2><p id="ventas-sub"></p></div></div>
+    <div class="tw table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th><th>Producto</th><th>Variante</th>
+            <th class="c">Cant.</th><th class="r">P. Unit.</th>
+            <th class="r">Total</th><th class="r">Ganancia</th>
+            <th>Pago</th><th>Cliente</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody-ventas"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="tab-movimientos" class="tab">
+    <div class="sh"><div><h2>Histórico de Inventario</h2><p id="mov-sub"></p></div></div>
+    <div class="tw table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th><th>Producto</th><th>Variante</th><th>Tipo</th>
+            <th class="c">Cambio</th><th class="c">Antes</th><th class="c">Después</th><th>Ref.</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody-mov"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="tab-nueva-venta" class="tab">
+    <div class="sh"><h2>Registrar Venta</h2></div>
+    <div class="panel">
+      <div id="nv-alert"></div>
+      <div class="fgrid">
+        <div class="fg"><label>Fecha</label><input type="date" id="nv-fecha"></div>
+        <div class="fg">
+          <label>Producto</label>
+          <select id="nv-prod"><option value="">Seleccionar...</option></select>
+        </div>
+      </div>
+      <div class="fg mb-1">
+        <label>Variante (color / talla)</label>
+        <select id="nv-var" disabled><option value="">— primero elegí un producto —</option></select>
+      </div>
+      <div id="nv-det" class="detail-panel hidden">
+        <div class="grid-3">
+          <div><span class="muted">Precio sugerido</span><br><strong id="det-precio" class="mono"></strong></div>
+          <div><span class="muted">Costo</span><br><strong id="det-costo" class="mono"></strong></div>
+          <div><span class="muted">Stock disponible</span><br><strong id="det-stock"></strong></div>
+        </div>
+      </div>
+      <div class="fgrid">
+        <div class="fg"><label>Cantidad</label><input type="number" id="nv-cant" value="1" min="1"></div>
+        <div class="fg"><label>Precio unitario (Bs)</label><input type="number" id="nv-precio" step="0.01"></div>
+        <div class="fg">
+          <label>Método de pago</label>
+          <select id="nv-pago">
+            <option>QR</option>
+            <option>Efectivo</option>
+            <option>Transferencia</option>
+            <option>Tarjeta</option>
+          </select>
+        </div>
+      </div>
+      <div class="fgrid">
+        <div class="fg"><label>Cliente (opcional)</label><input type="text" id="nv-cliente" placeholder="Nombre"></div>
+        <div class="fg"><label>Notas</label><input type="text" id="nv-notas"></div>
+      </div>
+      <div class="summary-row">
+        <span>Total:</span>
+        <span id="nv-total-disp" class="mono amount">Bs 0,00</span>
+      </div>
+      <div class="summary-row">
+        <span>Ganancia estimada:</span>
+        <span id="nv-gan-disp" class="mono gain">Bs 0,00</span>
+      </div>
+      <button class="btn bp full" id="btn-registrar-venta">Registrar Venta</button>
+    </div>
+  </div>
+</main>
+
+<div id="modal-prod" class="mo">
+  <div class="md">
+    <h3 id="mp-titulo">Nuevo Producto</h3>
+    <div class="fgrid">
+      <div class="fg"><label>ID del Producto</label><input id="mp-id" placeholder="Ej: C3"></div>
+      <div class="fg"><label>Nombre</label><input id="mp-nombre" placeholder="Ej: Chompa Tejida"></div>
+    </div>
+    <div class="fgrid">
+      <div class="fg"><label>Categoría</label><input id="mp-cat" placeholder="Ej: Chaleco"></div>
+      <div class="fg"><label>Costo (Bs)</label><input id="mp-costo" type="number" step="0.01"></div>
+      <div class="fg"><label>Precio Venta (Bs)</label><input id="mp-precio" type="number" step="0.01"></div>
+    </div>
+    <div class="fgrid">
+      <div class="fg"><label>Proveedor</label><input id="mp-prov" placeholder="Ej: Bethy Mama"></div>
+      <div class="fg"><label>Fecha Ingreso</label><input id="mp-fecha" type="date"></div>
+    </div>
+
+    <div class="section-title">Variantes — Color / Talla / Stock</div>
+    <div class="var-list" id="mp-var-list"></div>
+    <div class="add-var-grid">
+      <div class="fg"><label>Color</label><input id="av-color" placeholder="Ej: Negro"></div>
+      <div class="fg"><label>Talla</label><input id="av-talla" placeholder="Ej: Unica"></div>
+      <div class="fg"><label>Stock</label><input id="av-stock" type="number" value="1" min="0"></div>
+      <div class="var-btn-wrap">
+        <button class="btn bp small" id="btn-add-var">+ Agregar</button>
+      </div>
+    </div>
+
+    <div id="mp-alert"></div>
+    <div class="ma">
+      <button class="btn bs2" data-close="modal-prod">Cancelar</button>
+      <button class="btn bp" id="btn-guardar-producto">Guardar Producto</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-stock" class="mo">
+  <div class="md small-modal">
+    <h3>Ajustar Stock</h3>
+    <p class="muted mb-1" id="ms-sub"></p>
+    <div class="fg mb-1">
+      <label>Nuevo stock</label>
+      <input type="number" id="ms-val" min="0">
+    </div>
+    <div class="ma">
+      <button class="btn bs2" data-close="modal-stock">Cancelar</button>
+      <button class="btn bp" id="btn-guardar-stock">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script src="./config.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
