@@ -16,7 +16,10 @@ let nvVariantId = null;
 const $ = (id) => document.getElementById(id);
 
 document.addEventListener('DOMContentLoaded', async () => {
-  $('fecha-hdr').textContent = new Date().toLocaleDateString('es-BO', { day: '2-digit', month: 'long', year: 'numeric' });
+  const today = new Date();
+  const hdr = $('fecha-hdr');
+  hdr.textContent = today.toLocaleDateString('es-BO', { day: '2-digit', month: 'long', year: 'numeric' });
+  hdr.setAttribute('datetime', today.toISOString().slice(0, 10));
 
   document.querySelectorAll('nav button[data-tab]').forEach((button) => {
     button.addEventListener('click', () => showTab(button.dataset.tab));

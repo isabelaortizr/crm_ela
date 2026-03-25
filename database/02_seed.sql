@@ -9,8 +9,8 @@ INSERT INTO product_variants (id, product_id, color, size, stock)
 VALUES
   (1, 1, 'Café', 'Unica', 0),
   (2, 1, 'Negro', 'Unica', 1),
-  (3, 2, 'Arena', 'Unica', 1),
-  (4, 2, 'Blanco', 'Unica', 1),
+  (3, 2, 'Arena', 'Unica', 0),
+  (4, 2, 'Blanco', 'Unica', 0),
   (5, 3, 'Arena', 'Unica', 1),
   (6, 3, 'Blanco', 'Unica', 1)
 ON CONFLICT (id) DO NOTHING;

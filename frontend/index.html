@@ -2,25 +2,29 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mi Negocio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2d6a4f" />
+  <title>ELA Herencia — Administrador</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-<header>
-  <h1>📦 ELA HERENCIA - ADMINISTRADOR </h1>
-  <span id="fecha-hdr"></span>
-</header>
+<div class="app-top">
+  <header class="site-header">
+    <h1 class="site-title">📦 ELA Herencia</h1>
+    <p class="site-tagline">Administrador</p>
+    <time class="site-date" id="fecha-hdr" datetime=""></time>
+  </header>
 
-<nav>
-  <button class="active" data-tab="dashboard">Dashboard</button>
-  <button data-tab="inventario">Inventario</button>
-  <button data-tab="ventas">Ventas</button>
-  <button data-tab="movimientos">Mov. Inventario</button>
-  <button data-tab="nueva-venta">+ Nueva Venta</button>
-</nav>
+  <nav class="main-nav" aria-label="Secciones" role="navigation">
+    <button type="button" class="active" data-tab="dashboard">Dashboard</button>
+    <button type="button" data-tab="inventario">Inventario</button>
+    <button type="button" data-tab="ventas">Ventas</button>
+    <button type="button" data-tab="movimientos">Mov. inventario</button>
+    <button type="button" data-tab="nueva-venta">+ Venta</button>
+  </nav>
+</div>
 
-<main>
+<main class="page-main">
   <div id="tab-dashboard" class="tab active">
     <div class="metrics" id="dash-metrics"></div>
     <div class="grid-2">
