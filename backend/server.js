@@ -495,10 +495,8 @@ app.delete('/api/inventory-movements/:id', async (req, res) => {
 
 ensureInventoryMovementsTable()
   .then(() => {
-    console.log('PORT:', process.env.PORT);
-    console.log('DATABASE_URL:', process.env.DATABASE_URL);
     app.listen(PORT, () => {
-      console.log(`Backend corriendo en http://localhost:${PORT}`);
+      console.log(`Backend listo (puerto ${PORT})`);
     });
   })
   .catch((error) => {

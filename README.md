@@ -44,11 +44,7 @@ cp .env.example .env
 npm run dev
 ```
 
-El backend correrá en:
-
-```bash
-http://localhost:3001
-```
+En local, el puerto lo define `PORT` (por defecto `3001`). En producción (p. ej. Render) la URL pública es la que te da el proveedor.
 
 ## 3) Frontend
 
@@ -60,11 +56,13 @@ La URL del backend se configura en:
 frontend/config.js
 ```
 
-Por defecto apunta a:
+Debe ser la URL pública de tu API, incluyendo `/api` al final, por ejemplo:
 
 ```js
-http://localhost:3001/api
+API_BASE_URL: 'https://tu-backend.onrender.com/api'
 ```
+
+Para desarrollo local podés apuntar a tu máquina usando la misma variable (sin dejar URLs fijas en el código fuera de `config.js`).
 
 ## Pensando en Vercel
 
