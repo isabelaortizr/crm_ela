@@ -12,8 +12,31 @@ let msEditVariantId = null;
 let expanded = {};
 let nvProductId = null;
 let nvVariantId = null;
+let cart = [];
 
 const $ = (id) => document.getElementById(id);
+
+function confirmDialog(message, title = 'Confirmar', okLabel = 'Eliminar') {
+  return new Promise((resolve) => {
+    $('mc-titulo').textContent = title;
+    $('mc-msg').textContent = message;
+    $('mc-ok').textContent = okLabel;
+    $('modal-confirm').classList.add('open');
+    const cleanup = (result) => {
+      $('modal-confirm').classList.remove('open');
+      $('mc-ok').removeEventListener('click', onOk);
+      $('mc-cancel').removeEventListener('click', onCancel);
+      $('modal-confirm').removeEventListener('click', onOverlay);
+      resolve(result);
+    };
+    const onOk = () => cleanup(true);
+    const onCancel = () => cleanup(false);
+    const onOverlay = (e) => { if (e.target === $('modal-confirm')) cleanup(false); };
+    $('mc-ok').addEventListener('click', onOk);
+    $('mc-cancel').addEventListener('click', onCancel);
+    $('modal-confirm').addEventListener('click', onOverlay);
+  });
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
   const today = new Date();
@@ -30,6 +53,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('btn-guardar-producto').addEventListener('click', saveProduct);
   $('btn-guardar-stock').addEventListener('click', saveStock);
   $('btn-registrar-venta').addEventListener('click', registerSale);
+  $('btn-add-cart').addEventListener('click', addToCart);
 
   $('nv-prod').addEventListener('change', selectSaleProduct);
   $('nv-var').addEventListener('change', selectSaleVariant);
@@ -297,6 +321,7 @@ function renderMovements() {
 function initSaleForm() {
   nvProductId = null;
   nvVariantId = null;
+  cart = [];
   $('nv-fecha').value = new Date().toISOString().slice(0, 10);
   $('nv-cliente').value = '';
   $('nv-notas').value = '';
@@ -304,8 +329,9 @@ function initSaleForm() {
   $('nv-precio').value = '';
   $('nv-alert').innerHTML = '';
   $('nv-det').classList.add('hidden');
-  $('nv-total-disp').textContent = 'Bs 0,00';
-  $('nv-gan-disp').textContent = 'Bs 0,00';
+  $('nv-cart').classList.add('hidden');
+  $('nv-totales').classList.add('hidden');
+  $('btn-add-cart').disabled = true;
 
   $('nv-prod').innerHTML = '<option value="">Seleccionar producto...</option>';
   state.productos.forEach((product) => {
@@ -317,6 +343,87 @@ function initSaleForm() {
 
   $('nv-var').innerHTML = '<option value="">— primero elegí un producto —</option>';
   $('nv-var').disabled = true;
+  renderCart();
+}
+
+function renderCart() {
+  if (!cart.length) {
+    $('nv-cart').classList.add('hidden');
+    $('nv-totales').classList.add('hidden');
+    return;
+  }
+  $('nv-cart').classList.remove('hidden');
+  $('nv-totales').classList.remove('hidden');
+
+  let totalAmount = 0;
+  let totalProfit = 0;
+
+  $('nv-cart').innerHTML = cart.map((item, index) => {
+    const itemTotal = item.quantity * item.unit_price;
+    const itemProfit = item.quantity * (item.unit_price - item.cost_price);
+    totalAmount += itemTotal;
+    totalProfit += itemProfit;
+    return `
+      <div class="cart-item">
+        <div class="cart-item-info">
+          <span class="cart-item-name">${item.product_name}</span>
+          <span class="cart-item-detail">${item.variant_label} · ${item.quantity} ud${item.quantity > 1 ? 's' : ''}. × ${fmt(item.unit_price)}</span>
+        </div>
+        <span class="cart-item-price">${fmt(itemTotal)}</span>
+        <button class="btn bd bsm" data-remove-cart="${index}">×</button>
+      </div>
+    `;
+  }).join('');
+
+  $('nv-total-disp').textContent = fmt(totalAmount);
+  $('nv-gan-disp').textContent = fmt(totalProfit);
+  $('nv-gan-disp').style.color = totalProfit >= 0 ? 'var(--accent)' : 'var(--danger)';
+
+  document.querySelectorAll('[data-remove-cart]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      cart.splice(Number(btn.dataset.removeCart), 1);
+      renderCart();
+    });
+  });
+}
+
+function addToCart() {
+  if (!nvProductId || !nvVariantId) return;
+  const product = state.productos.find((p) => p.id === Number(nvProductId));
+  const variant = product.variants.find((v) => v.id === Number(nvVariantId));
+  const quantity = Number($('nv-cant').value || 0);
+  const unit_price = Number($('nv-precio').value || 0);
+
+  if (quantity < 1 || !unit_price) {
+    $('nv-alert').innerHTML = alertBox('aw', 'Ingresá cantidad y precio.');
+    return;
+  }
+  if (quantity > variant.stock) {
+    $('nv-alert').innerHTML = alertBox('ae', `Stock insuficiente. Disponible: ${variant.stock}`);
+    return;
+  }
+
+  cart.push({
+    product_id: product.id,
+    variant_id: variant.id,
+    product_name: product.name,
+    variant_label: `${variant.color} / ${variant.size}`,
+    quantity,
+    unit_price,
+    cost_price: product.cost_price,
+  });
+
+  $('nv-alert').innerHTML = '';
+  $('nv-prod').value = '';
+  $('nv-var').innerHTML = '<option value="">— primero elegí un producto —</option>';
+  $('nv-var').disabled = true;
+  $('nv-det').classList.add('hidden');
+  $('nv-cant').value = 1;
+  $('nv-precio').value = '';
+  $('btn-add-cart').disabled = true;
+  nvProductId = null;
+  nvVariantId = null;
+  renderCart();
 }
 
 function selectSaleProduct() {
@@ -347,6 +454,7 @@ function selectSaleVariant() {
   nvVariantId = variantId || null;
   if (!variantId || !nvProductId) {
     $('nv-det').classList.add('hidden');
+    $('btn-add-cart').disabled = true;
     return;
   }
 
@@ -358,41 +466,47 @@ function selectSaleVariant() {
   $('det-stock').textContent = `${variant.stock} uds.`;
   $('nv-precio').value = product.sale_price;
   $('nv-det').classList.remove('hidden');
+  $('btn-add-cart').disabled = false;
   recalcSale();
 }
 
 function recalcSale() {
   if (!nvProductId || !nvVariantId) return;
-  const product = state.productos.find((item) => item.id === Number(nvProductId));
-  const quantity = Number($('nv-cant').value || 0);
-  const unitPrice = Number($('nv-precio').value || 0);
-  const total = quantity * unitPrice;
-  const profit = quantity * (unitPrice - product.cost_price);
-  $('nv-total-disp').textContent = fmt(total);
-  $('nv-gan-disp').textContent = fmt(profit);
-  $('nv-gan-disp').style.color = profit >= 0 ? 'var(--accent)' : 'var(--danger)';
 }
 
 async function registerSale() {
-  try {
-    const payload = {
-      sale_date: $('nv-fecha').value,
-      product_id: Number(nvProductId),
-      variant_id: Number(nvVariantId),
-      quantity: Number($('nv-cant').value),
-      unit_price: Number($('nv-precio').value),
-      payment_method: $('nv-pago').value,
-      customer_name: $('nv-cliente').value.trim(),
-      notes: $('nv-notas').value.trim()
-    };
+  if (!cart.length) {
+    $('nv-alert').innerHTML = alertBox('aw', 'Agregá al menos un producto al carrito.');
+    return;
+  }
+  const sale_date = $('nv-fecha').value;
+  if (!sale_date) {
+    $('nv-alert').innerHTML = alertBox('ae', 'Seleccioná la fecha.');
+    return;
+  }
 
-    if (!payload.product_id || !payload.variant_id || !payload.sale_date || payload.quantity < 1 || !payload.unit_price) {
-      $('nv-alert').innerHTML = alertBox('ae', 'Completá todos los campos.');
-      return;
+  try {
+    const payment_method = $('nv-pago').value;
+    const customer_name = $('nv-cliente').value.trim();
+    const notes = $('nv-notas').value.trim();
+
+    for (const item of cart) {
+      await api('/sales', {
+        method: 'POST',
+        body: JSON.stringify({
+          sale_date,
+          product_id: item.product_id,
+          variant_id: item.variant_id,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          payment_method,
+          customer_name,
+          notes,
+        }),
+      });
     }
 
-    await api('/sales', { method: 'POST', body: JSON.stringify(payload) });
-    $('nv-alert').innerHTML = alertBox('as', '✓ Venta registrada correctamente.');
+    $('nv-alert').innerHTML = alertBox('as', `✓ Venta registrada (${cart.length} producto${cart.length > 1 ? 's' : ''}).`);
     await loadApp();
     setTimeout(() => showTab('dashboard'), 800);
   } catch (error) {
@@ -542,25 +656,25 @@ async function saveStock() {
 }
 
 async function deleteProduct(id) {
-  if (!confirm('¿Eliminar este producto y todas sus variantes?')) return;
+  if (!await confirmDialog('¿Eliminar este producto y todas sus variantes?')) return;
   await api(`/products/${id}`, { method: 'DELETE' });
   await loadApp();
 }
 
 async function deleteVariant(id) {
-  if (!confirm('¿Eliminar esta variante?')) return;
+  if (!await confirmDialog('¿Eliminar esta variante?')) return;
   await api(`/variants/${id}`, { method: 'DELETE' });
   await loadApp();
 }
 
 async function deleteSale(id) {
-  if (!confirm('¿Eliminar esta venta? El stock se restaurará automáticamente.')) return;
+  if (!await confirmDialog('¿Eliminar esta venta? El stock se restaurará automáticamente.')) return;
   await api(`/sales/${id}`, { method: 'DELETE' });
   await loadApp();
 }
 
 async function deleteMovement(id) {
-  if (!confirm('¿Eliminar este movimiento del histórico? Esta acción no cambia el stock actual.')) return;
+  if (!await confirmDialog('¿Eliminar este movimiento del histórico? Esta acción no cambia el stock actual.')) return;
   await api(`/inventory-movements/${id}`, { method: 'DELETE' });
   await loadApp();
 }
