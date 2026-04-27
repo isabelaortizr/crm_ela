@@ -27,7 +27,14 @@
 <main class="page-main">
   <div id="tab-dashboard" class="tab active">
     <div class="metrics" id="dash-metrics"></div>
-    <div id="chart-ganancias" style="background:var(--surface);border-radius:10px;padding:1rem;margin:1rem 0;"></div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <span class="chart-title">Ganancias Mensuales</span>
+        <span class="chart-hint">Tocá una barra para ver el detalle</span>
+      </div>
+      <div id="chart-ganancias" class="chart-canvas-wrap"></div>
+    </div>
+    <div id="chart-ganancias-detalle" class="hidden"></div>
     <div class="grid-2">
       <div>
         <div class="sh"><h2>Ventas recientes</h2></div>

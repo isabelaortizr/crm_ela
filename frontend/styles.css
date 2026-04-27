@@ -817,3 +817,104 @@ select:focus {
     padding-right: 0.75rem;
   }
 }
+
+/* Gráfico de ganancias */
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.1rem 1.1rem 0.85rem;
+  margin-bottom: clamp(0.75rem, 3vw, 1rem);
+  box-shadow: var(--shadow-sm);
+}
+
+.chart-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.chart-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text2);
+  font-weight: 600;
+}
+
+.chart-hint {
+  font-size: 0.72rem;
+  color: var(--text2);
+  font-style: italic;
+}
+
+.chart-canvas-wrap {
+  position: relative;
+  height: 240px;
+}
+
+@media (max-width: 600px) {
+  .chart-canvas-wrap {
+    height: 195px;
+  }
+
+  .chart-hint {
+    display: none;
+  }
+}
+
+/* Panel de detalle mensual */
+.chart-detalle {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.1rem;
+  margin-bottom: clamp(0.75rem, 3vw, 1rem);
+  box-shadow: var(--shadow-sm);
+  animation: tabIn 0.2s ease;
+}
+
+.chart-detalle-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chart-detalle-mes {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.chart-detalle-metricas {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 0.85rem;
+}
+
+.chart-dm {
+  background: var(--surface2);
+  border-radius: var(--radius);
+  padding: 0.65rem 0.75rem;
+}
+
+.chart-dm .lbl {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text2);
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.chart-dm .val {
+  font-size: clamp(0.88rem, 3vw, 1rem);
+  font-family: var(--mono);
+}

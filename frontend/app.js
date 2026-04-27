@@ -693,11 +693,19 @@ async function fetchGananciasChart() {
     container.innerHTML = '<canvas id="canvas-ganancias"></canvas>';
     const canvas = $('canvas-ganancias');
 
-    if (gananciaChart) {
-      gananciaChart.destroy();
+    if (gananciaChart) gananciaChart.destroy();
+
+    if (!data.length) {
+      container.innerHTML = '<p class="empty">Sin ventas registradas aún.</p>';
+      return;
     }
 
-    const labels = data.map((row) => row.mes);
+    const meses = data.map((row) => row.mes);
+    const labels = data.map((row) => {
+      const [year, month] = row.mes.split('-');
+      return new Date(Number(year), Number(month) - 1, 1)
+        .toLocaleDateString('es-BO', { month: 'short', year: 'numeric' });
+    });
     const values = data.map((row) => Number(row.ganancia));
 
     gananciaChart = new Chart(canvas, {
@@ -705,34 +713,53 @@ async function fetchGananciasChart() {
       data: {
         labels,
         datasets: [{
-          label: 'Ganancia (Bs)',
+          label: 'Ganancia',
           data: values,
-          backgroundColor: '#2d6a4f',
-          borderColor: '#1b4332',
-          borderWidth: 1,
-          borderRadius: 4,
+          backgroundColor: (ctx) => (ctx.parsed?.y ?? 0) >= 0 ? 'rgba(45,106,79,0.82)' : 'rgba(192,57,43,0.82)',
+          hoverBackgroundColor: (ctx) => (ctx.parsed?.y ?? 0) >= 0 ? '#2d6a4f' : '#c0392b',
+          borderColor: (ctx) => (ctx.parsed?.y ?? 0) >= 0 ? '#1b4332' : '#922b21',
+          borderWidth: 1.5,
+          borderRadius: 5,
+          borderSkipped: false,
         }],
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
+        onClick: (_e, elements) => {
+          if (!elements.length) return;
+          const idx = elements[0].index;
+          renderGananciasDetalle(meses[idx], labels[idx], values[idx]);
+        },
+        onHover: (e, elements) => {
+          e.native.target.style.cursor = elements.length ? 'pointer' : 'default';
+        },
         plugins: {
-          title: {
-            display: true,
-            text: 'Ganancias Mensuales',
-            color: '#2d6a4f',
-            font: { size: 15, weight: 'bold' },
-          },
           legend: { display: false },
           tooltip: {
+            backgroundColor: 'rgba(26,26,24,0.92)',
+            titleColor: 'rgba(255,255,255,0.65)',
+            bodyColor: '#fff',
+            padding: 10,
+            cornerRadius: 8,
             callbacks: {
-              label: (ctx) => ' ' + fmt(ctx.parsed.y),
+              label: (ctx) => '  ' + fmt(ctx.parsed.y),
             },
           },
         },
         scales: {
+          x: {
+            grid: { display: false },
+            border: { display: false },
+            ticks: { color: '#6b6760', font: { size: 11 } },
+          },
           y: {
             beginAtZero: true,
+            grid: { color: 'rgba(224,219,208,0.7)' },
+            border: { display: false, dash: [4, 4] },
             ticks: {
+              color: '#6b6760',
+              font: { size: 11 },
               callback: (val) => 'Bs ' + Number(val).toLocaleString('es-BO'),
             },
           },
@@ -742,4 +769,63 @@ async function fetchGananciasChart() {
   } catch (error) {
     console.error('Error cargando gráfico de ganancias:', error);
   }
+}
+
+function renderGananciasDetalle(mes, label, gananciaTotal) {
+  const ventasDelMes = state.ventas.filter((v) => v.sale_date.slice(0, 7) === mes);
+  const totalVentas = ventasDelMes.reduce((acc, v) => acc + Number(v.total_amount), 0);
+  const totalUnidades = ventasDelMes.reduce((acc, v) => acc + Number(v.quantity), 0);
+
+  const filas = ventasDelMes.map((v) => `
+    <tr>
+      <td>${fmtF(v.sale_date)}</td>
+      <td>${v.product_name}</td>
+      <td style="font-size:0.78rem;color:var(--text2);">${v.variant_label}</td>
+      <td class="c">${v.quantity}</td>
+      <td class="r mono">${fmt(v.total_amount)}</td>
+      <td class="r mono" style="color:${Number(v.profit_amount) >= 0 ? 'var(--accent)' : 'var(--danger)'};">${fmt(v.profit_amount)}</td>
+    </tr>
+  `).join('');
+
+  const detalle = $('chart-ganancias-detalle');
+  detalle.className = 'chart-detalle';
+  detalle.innerHTML = `
+    <div class="chart-detalle-header">
+      <span class="chart-detalle-mes">${label}</span>
+      <button class="btn bs2 bsm" id="btn-cerrar-detalle">Cerrar ×</button>
+    </div>
+    <div class="chart-detalle-metricas">
+      <div class="chart-dm">
+        <div class="lbl">Ganancia</div>
+        <div class="val" style="color:${gananciaTotal >= 0 ? 'var(--accent)' : 'var(--danger)'};">${fmt(gananciaTotal)}</div>
+      </div>
+      <div class="chart-dm">
+        <div class="lbl">Ingresos</div>
+        <div class="val">${fmt(totalVentas)}</div>
+      </div>
+      <div class="chart-dm">
+        <div class="lbl">Unidades</div>
+        <div class="val" style="color:var(--info);">${totalUnidades}</div>
+      </div>
+    </div>
+    ${ventasDelMes.length ? `
+      <div class="tw" style="margin-bottom:0;">
+        <div class="table-scroll">
+          <table>
+            <thead><tr>
+              <th>Fecha</th><th>Producto</th><th>Variante</th>
+              <th class="c">Cant.</th><th class="r">Total</th><th class="r">Ganancia</th>
+            </tr></thead>
+            <tbody>${filas}</tbody>
+          </table>
+        </div>
+      </div>
+    ` : '<p class="empty">Sin ventas registradas este mes.</p>'}
+  `;
+
+  $('btn-cerrar-detalle').addEventListener('click', () => {
+    detalle.className = 'hidden';
+  });
+
+  detalle.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
