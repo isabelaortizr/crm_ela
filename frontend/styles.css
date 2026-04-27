@@ -266,6 +266,10 @@ body {
   margin-bottom: clamp(1rem, 4vw, 1.5rem);
 }
 
+.grid-2 > * {
+  min-width: 0;
+}
+
 .grid-3 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -808,6 +812,27 @@ select:focus {
   .bedit {
     min-height: var(--touch);
     padding: 0.5rem 0.75rem;
+  }
+
+  /* Tablas del dashboard: pocas columnas, no necesitan scroll */
+  #tab-dashboard .table-scroll table {
+    min-width: 0;
+    width: 100%;
+  }
+
+  #tab-dashboard .table-scroll thead th,
+  #tab-dashboard .table-scroll tbody td {
+    padding: 7px 8px;
+    font-size: 0.75rem;
+  }
+
+  #tab-dashboard .table-scroll .mono {
+    white-space: nowrap;
+  }
+
+  /* Métricas: fuente levemente más chica en pantallas muy pequeñas */
+  .metric .val {
+    font-size: clamp(1.05rem, 4vw, 1.55rem);
   }
 }
 
