@@ -8,6 +8,7 @@ let state = {
 };
 let mpVars = [];
 let mpEditId = null;
+let gananciaChart = null;
 let msEditVariantId = null;
 let expanded = {};
 let nvProductId = null;
@@ -109,6 +110,7 @@ async function loadApp() {
     renderSales();
     renderMovements();
     initSaleForm();
+    await fetchGananciasChart();
   } catch (error) {
     console.error(error);
     alert(`No se pudo cargar la aplicación: ${error.message}`);
@@ -681,4 +683,63 @@ async function deleteMovement(id) {
 
 function closeModal(id) {
   $(id).classList.remove('open');
+}
+
+async function fetchGananciasChart() {
+  try {
+    const data = await api('/ganancias-mensuales');
+
+    const container = $('chart-ganancias');
+    container.innerHTML = '<canvas id="canvas-ganancias"></canvas>';
+    const canvas = $('canvas-ganancias');
+
+    if (gananciaChart) {
+      gananciaChart.destroy();
+    }
+
+    const labels = data.map((row) => row.mes);
+    const values = data.map((row) => Number(row.ganancia));
+
+    gananciaChart = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Ganancia (Bs)',
+          data: values,
+          backgroundColor: '#2d6a4f',
+          borderColor: '#1b4332',
+          borderWidth: 1,
+          borderRadius: 4,
+        }],
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Ganancias Mensuales',
+            color: '#2d6a4f',
+            font: { size: 15, weight: 'bold' },
+          },
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => ' ' + fmt(ctx.parsed.y),
+            },
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: (val) => 'Bs ' + Number(val).toLocaleString('es-BO'),
+            },
+          },
+        },
+      },
+    });
+  } catch (error) {
+    console.error('Error cargando gráfico de ganancias:', error);
+  }
 }

@@ -493,6 +493,26 @@ app.delete('/api/inventory-movements/:id', async (req, res) => {
   }
 });
 
+app.get('/api/ganancias-mensuales', async (_req, res) => {
+  try {
+    const result = await query(`
+      SELECT
+        TO_CHAR(DATE_TRUNC('month', s.sale_date::date), 'YYYY-MM') AS mes,
+        COALESCE(SUM(s.quantity * (s.unit_price - p.cost_price)), 0) AS ganancia
+      FROM sales s
+      INNER JOIN products p ON p.id = s.product_id
+      GROUP BY DATE_TRUNC('month', s.sale_date::date)
+      ORDER BY DATE_TRUNC('month', s.sale_date::date) ASC
+    `);
+    res.json(result.rows.map((row) => ({
+      mes: row.mes,
+      ganancia: Number(row.ganancia),
+    })));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 ensureInventoryMovementsTable()
   .then(() => {
     app.listen(PORT, () => {
