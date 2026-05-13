@@ -70,7 +70,7 @@ app.get('/api/health', async (_req, res) => {
 app.get('/api/products', async (_req, res) => {
   try {
     const productsResult = await query(`
-      SELECT id, code, name, category, cost_price, sale_price, provider, entry_date
+      SELECT id, name, category, cost_price, sale_price, provider, entry_date
       FROM products
       ORDER BY id ASC
     `);
@@ -99,9 +99,9 @@ app.get('/api/products', async (_req, res) => {
 });
 
 app.post('/api/products', async (req, res) => {
-  const { code, name, category, cost_price, sale_price, provider, entry_date, variants = [] } = req.body;
+  const { name, category, cost_price, sale_price, provider, entry_date, variants = [] } = req.body;
 
-  if (!code || !name || !cost_price || !sale_price || variants.length === 0) {
+  if (!name || !cost_price || !sale_price || variants.length === 0) {
     return res.status(400).json({ error: 'Faltan campos obligatorios del producto.' });
   }
 
@@ -110,10 +110,10 @@ app.post('/api/products', async (req, res) => {
     await client.query('BEGIN');
 
     const productResult = await client.query(`
-      INSERT INTO products (code, name, category, cost_price, sale_price, provider, entry_date)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO products (name, category, cost_price, sale_price, provider, entry_date)
+      VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
-    `, [code, name, category || null, cost_price, sale_price, provider || null, entry_date || null]);
+    `, [name, category || null, cost_price, sale_price, provider || null, entry_date || null]);
 
     for (const variant of variants) {
       await client.query(`
@@ -134,7 +134,7 @@ app.post('/api/products', async (req, res) => {
 
 app.put('/api/products/:id', async (req, res) => {
   const productId = Number(req.params.id);
-  const { code, name, category, cost_price, sale_price, provider, entry_date, variants = [] } = req.body;
+  const { name, category, cost_price, sale_price, provider, entry_date, variants = [] } = req.body;
 
   const client = await pool.connect();
   try {
@@ -142,9 +142,9 @@ app.put('/api/products/:id', async (req, res) => {
 
     await client.query(`
       UPDATE products
-      SET code = $1, name = $2, category = $3, cost_price = $4, sale_price = $5, provider = $6, entry_date = $7
-      WHERE id = $8
-    `, [code, name, category || null, cost_price, sale_price, provider || null, entry_date || null, productId]);
+      SET name = $1, category = $2, cost_price = $3, sale_price = $4, provider = $5, entry_date = $6
+      WHERE id = $7
+    `, [name, category || null, cost_price, sale_price, provider || null, entry_date || null, productId]);
 
     const existingResult = await client.query(`
       SELECT id FROM product_variants WHERE product_id = $1
