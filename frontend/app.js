@@ -14,8 +14,32 @@ let expanded = {};
 let nvProductId = null;
 let nvVariantId = null;
 let cart = [];
+let invSearch = '';
+let ventasSearch = '';
 
 const $ = (id) => document.getElementById(id);
+
+function showLoading() {
+  $('loading-overlay').classList.remove('hidden');
+}
+
+function hideLoading() {
+  $('loading-overlay').classList.add('hidden');
+}
+
+function toast(text, type = '', duration = 3200) {
+  const container = $('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = text;
+  container.appendChild(el);
+  setTimeout(() => {
+    el.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(8px)';
+    setTimeout(() => el.remove(), 220);
+  }, duration);
+}
 
 function confirmDialog(message, title = 'Confirmar', okLabel = 'Eliminar') {
   return new Promise((resolve) => {
@@ -61,6 +85,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('nv-cant').addEventListener('input', recalcSale);
   $('nv-precio').addEventListener('input', recalcSale);
 
+  $('inv-search').addEventListener('input', (e) => {
+    invSearch = e.target.value.trim().toLowerCase();
+    renderInventory();
+  });
+
+  $('ventas-search').addEventListener('input', (e) => {
+    ventasSearch = e.target.value.trim().toLowerCase();
+    renderSales();
+  });
+
   document.querySelectorAll('[data-close]').forEach((btn) => {
     btn.addEventListener('click', () => closeModal(btn.dataset.close));
   });
@@ -92,6 +126,7 @@ async function api(path, options = {}) {
 }
 
 async function loadApp() {
+  showLoading();
   try {
     const [products, sales, dashboard, movements] = await Promise.all([
       api('/products'),
@@ -113,7 +148,9 @@ async function loadApp() {
     await fetchGananciasChart();
   } catch (error) {
     console.error(error);
-    alert(`No se pudo cargar la aplicación: ${error.message}`);
+    toast(`No se pudo cargar: ${error.message}`, 'te', 6000);
+  } finally {
+    hideLoading();
   }
 }
 
@@ -170,12 +207,26 @@ function renderDashboard() {
 }
 
 function renderInventory() {
-  const products = state.productos;
-  const totalVariants = products.reduce((acc, product) => acc + product.variants.length, 0);
-  $('inv-sub').textContent = `${products.length} productos · ${totalVariants} variantes`;
+  const all = state.productos;
+  const totalVariants = all.reduce((acc, p) => acc + p.variants.length, 0);
+  $('inv-sub').textContent = `${all.length} productos · ${totalVariants} variantes`;
+
+  const products = invSearch
+    ? all.filter((p) =>
+        p.name.toLowerCase().includes(invSearch) ||
+        p.code.toLowerCase().includes(invSearch) ||
+        (p.category || '').toLowerCase().includes(invSearch) ||
+        (p.provider || '').toLowerCase().includes(invSearch)
+      )
+    : all;
+
+  if (!all.length) {
+    $('tbody-inv').innerHTML = '<tr><td colspan="10"><div class="empty">Sin productos. Agregá uno.</div></td></tr>';
+    return;
+  }
 
   if (!products.length) {
-    $('tbody-inv').innerHTML = '<tr><td colspan="10"><div class="empty">Sin productos. Agregá uno.</div></td></tr>';
+    $('tbody-inv').innerHTML = `<tr><td colspan="10"><div class="empty">Sin resultados para "${invSearch}".</div></td></tr>`;
     return;
   }
 
@@ -243,14 +294,29 @@ function renderInventory() {
 }
 
 function renderSales() {
-  $('ventas-sub').textContent = `${state.ventas.length} ventas registradas`;
+  const all = state.ventas;
+  $('ventas-sub').textContent = `${all.length} ventas registradas`;
 
-  if (!state.ventas.length) {
+  const sales = ventasSearch
+    ? all.filter((s) =>
+        s.product_name.toLowerCase().includes(ventasSearch) ||
+        (s.customer_name || '').toLowerCase().includes(ventasSearch) ||
+        s.variant_label.toLowerCase().includes(ventasSearch) ||
+        (s.payment_method || '').toLowerCase().includes(ventasSearch)
+      )
+    : all;
+
+  if (!all.length) {
     $('tbody-ventas').innerHTML = '<tr><td colspan="10"><div class="empty">Sin ventas registradas</div></td></tr>';
     return;
   }
 
-  $('tbody-ventas').innerHTML = state.ventas.map((sale) => `
+  if (!sales.length) {
+    $('tbody-ventas').innerHTML = `<tr><td colspan="10"><div class="empty">Sin resultados para "${ventasSearch}".</div></td></tr>`;
+    return;
+  }
+
+  $('tbody-ventas').innerHTML = sales.map((sale) => `
     <tr>
       <td>${fmtF(sale.sale_date)}</td>
       <td>${sale.product_name}</td>
@@ -632,6 +698,7 @@ async function saveProduct() {
     closeModal('modal-prod');
     await loadApp();
     showTab('inventario');
+    toast(mpEditId ? 'Producto actualizado' : 'Producto creado', 'ts');
   } catch (error) {
     $('mp-alert').innerHTML = alertBox('ae', error.message);
   }
@@ -652,8 +719,9 @@ async function saveStock() {
     });
     closeModal('modal-stock');
     await loadApp();
+    toast('Stock actualizado', 'ts');
   } catch (error) {
-    alert(error.message);
+    toast(error.message, 'te');
   }
 }
 

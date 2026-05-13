@@ -13,6 +13,13 @@
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
+
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <p class="muted">Cargando...</p>
+</div>
+<div id="toast-container"></div>
+
 <div class="app-top">
   <header class="site-header">
     <h1 class="site-title">📦 ELA Herencia</h1>
@@ -65,7 +72,10 @@
   <div id="tab-inventario" class="tab">
     <div class="sh">
       <div><h2>Inventario</h2><p id="inv-sub"></p></div>
-      <button class="btn bp" id="btn-nuevo-producto">+ Nuevo Producto</button>
+      <div class="sh-actions">
+        <input type="search" id="inv-search" placeholder="Buscar producto..." class="search-input">
+        <button class="btn bp" id="btn-nuevo-producto">+ Nuevo Producto</button>
+      </div>
     </div>
     <div class="tw table-scroll">
       <table>
@@ -82,7 +92,10 @@
   </div>
 
   <div id="tab-ventas" class="tab">
-    <div class="sh"><div><h2>Historial de Ventas</h2><p id="ventas-sub"></p></div></div>
+    <div class="sh">
+      <div><h2>Historial de Ventas</h2><p id="ventas-sub"></p></div>
+      <input type="search" id="ventas-search" placeholder="Buscar producto o cliente..." class="search-input">
+    </div>
     <div class="tw table-scroll">
       <table>
         <thead>
