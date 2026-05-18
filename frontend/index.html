@@ -190,7 +190,10 @@
           <span>Ganancia estimada:</span>
           <span id="nv-gan-disp" class="mono gain">Bs 0,00</span>
         </div>
-        <button class="btn bp full" id="btn-registrar-venta">Registrar Venta</button>
+        <div class="btn-row">
+          <button class="btn bs2 full" id="btn-pdf-cuenta">📄 Descargar Cuenta</button>
+          <button class="btn bp full" id="btn-registrar-venta">Registrar Venta</button>
+        </div>
       </div>
     </div>
   </div>
@@ -200,7 +203,6 @@
   <div class="md">
     <h3 id="mp-titulo">Nuevo Producto</h3>
     <div class="fgrid">
-      <div class="fg"><label>ID del Producto</label><input id="mp-id" placeholder="Ej: C3"></div>
       <div class="fg"><label>Nombre</label><input id="mp-nombre" placeholder="Ej: Chompa Tejida"></div>
     </div>
     <div class="fgrid">
@@ -260,6 +262,8 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3/dist/jspdf.plugin.autotable.min.js"></script>
 <script src="./config.js"></script>
 <script src="./app.js"></script>
 <script>

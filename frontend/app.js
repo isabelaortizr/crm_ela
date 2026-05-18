@@ -78,6 +78,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('btn-guardar-producto').addEventListener('click', saveProduct);
   $('btn-guardar-stock').addEventListener('click', saveStock);
   $('btn-registrar-venta').addEventListener('click', registerSale);
+  $('btn-pdf-cuenta').addEventListener('click', generatePDF);
   $('btn-add-cart').addEventListener('click', addToCart);
 
   $('nv-prod').addEventListener('change', selectSaleProduct);
@@ -240,7 +241,7 @@ function renderInventory() {
     html += `
       <tr class="prod-base" data-toggle-product="${product.id}">
         <td style="font-size:0.8rem;color:var(--text2);">${isExpanded ? '▼' : '▶'}</td>
-        <td><span class="badge bk">${product.code}</span></td>
+        <td><span class="badge bk">#${product.id}</span></td>
         <td>${product.name}</td>
         <td>${product.category || '—'}</td>
         <td class="r mono">${fmt(product.cost_price)}</td>
@@ -405,7 +406,7 @@ function initSaleForm() {
   state.productos.forEach((product) => {
     const option = document.createElement('option');
     option.value = product.id;
-    option.textContent = `[${product.code}] ${product.name}`;
+    option.textContent = `#${product.id} ${product.name}`;
     $('nv-prod').appendChild(option);
   });
 
@@ -590,7 +591,6 @@ function openProductModal(productId = null) {
   if (mpEditId) {
     const product = state.productos.find((item) => item.id === mpEditId);
     $('mp-titulo').textContent = 'Editar Producto';
-    $('mp-id').value = product.code;
     $('mp-nombre').value = product.name;
     $('mp-cat').value = product.category || '';
     $('mp-costo').value = product.cost_price;
@@ -600,7 +600,7 @@ function openProductModal(productId = null) {
     mpVars = product.variants.map((variant) => ({ ...variant }));
   } else {
     $('mp-titulo').textContent = 'Nuevo Producto';
-    ['mp-id', 'mp-nombre', 'mp-cat', 'mp-prov', 'av-color', 'av-talla'].forEach((id) => $(id).value = '');
+    ['mp-nombre', 'mp-cat', 'mp-prov', 'av-color', 'av-talla'].forEach((id) => $(id).value = '');
     $('mp-costo').value = '';
     $('mp-precio').value = '';
     $('mp-fecha').value = new Date().toISOString().slice(0, 10);
@@ -664,7 +664,6 @@ function addVariantDraft() {
 async function saveProduct() {
   try {
     const payload = {
-      code: $('mp-id').value.trim(),
       name: $('mp-nombre').value.trim(),
       category: $('mp-cat').value.trim(),
       cost_price: Number($('mp-costo').value),
@@ -679,8 +678,8 @@ async function saveProduct() {
       }))
     };
 
-    if (!payload.code || !payload.name || !payload.cost_price || !payload.sale_price) {
-      $('mp-alert').innerHTML = alertBox('ae', 'Completá ID, nombre, costo y precio.');
+    if (!payload.name || !payload.cost_price || !payload.sale_price) {
+      $('mp-alert').innerHTML = alertBox('ae', 'Completá nombre, costo y precio.');
       return;
     }
 
@@ -751,6 +750,122 @@ async function deleteMovement(id) {
 
 function closeModal(id) {
   $(id).classList.remove('open');
+}
+
+function generatePDF() {
+  if (!cart.length) {
+    $('nv-alert').innerHTML = alertBox('aw', 'Agregá al menos un producto al carrito.');
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a5' });
+
+  const GREEN = [45, 106, 79];
+  const DARK = [30, 30, 28];
+  const GRAY = [120, 115, 108];
+  const pageW = doc.internal.pageSize.getWidth();
+
+  // Encabezado
+  doc.setFillColor(...GREEN);
+  doc.rect(0, 0, pageW, 22, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text('ELA Herencia', pageW / 2, 10, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.text('Cuenta del Cliente', pageW / 2, 16, { align: 'center' });
+
+  // Datos generales
+  let y = 28;
+  doc.setTextColor(...DARK);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+
+  const fecha = $('nv-fecha').value
+    ? new Date($('nv-fecha').value + 'T12:00:00').toLocaleDateString('es-BO', { day: '2-digit', month: 'long', year: 'numeric' })
+    : '';
+  const cliente = $('nv-cliente').value.trim() || '—';
+  const pago = $('nv-pago').value;
+  const notas = $('nv-notas').value.trim();
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('Fecha:', 10, y);
+  doc.setFont('helvetica', 'normal');
+  doc.text(fecha, 28, y);
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('Cliente:', pageW / 2 + 2, y);
+  doc.setFont('helvetica', 'normal');
+  doc.text(cliente, pageW / 2 + 18, y);
+
+  y += 6;
+  doc.setFont('helvetica', 'bold');
+  doc.text('Pago:', 10, y);
+  doc.setFont('helvetica', 'normal');
+  doc.text(pago, 28, y);
+
+  if (notas) {
+    y += 6;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Notas:', 10, y);
+    doc.setFont('helvetica', 'normal');
+    doc.text(notas, 28, y);
+  }
+
+  y += 4;
+
+  // Tabla de productos
+  const rows = cart.map((item) => [
+    item.product_name,
+    item.variant_label,
+    item.quantity,
+    'Bs ' + Number(item.unit_price).toLocaleString('es-BO', { minimumFractionDigits: 2 }),
+    'Bs ' + Number(item.quantity * item.unit_price).toLocaleString('es-BO', { minimumFractionDigits: 2 }),
+  ]);
+
+  doc.autoTable({
+    startY: y,
+    head: [['Producto', 'Variante', 'Cant.', 'P. Unit.', 'Total']],
+    body: rows,
+    theme: 'grid',
+    styles: { fontSize: 8, cellPadding: 2.5, textColor: DARK },
+    headStyles: { fillColor: GREEN, textColor: [255, 255, 255], fontStyle: 'bold' },
+    columnStyles: {
+      0: { cellWidth: 40 },
+      1: { cellWidth: 30 },
+      2: { halign: 'center', cellWidth: 14 },
+      3: { halign: 'right', cellWidth: 24 },
+      4: { halign: 'right', cellWidth: 24 },
+    },
+    margin: { left: 10, right: 10 },
+  });
+
+  const finalY = doc.lastAutoTable.finalY + 4;
+
+  // Totales
+  const totalAmount = cart.reduce((acc, item) => acc + item.quantity * item.unit_price, 0);
+  const totalStr = 'Bs ' + totalAmount.toLocaleString('es-BO', { minimumFractionDigits: 2 });
+
+  doc.setDrawColor(...GRAY);
+  doc.setLineWidth(0.3);
+  doc.line(10, finalY, pageW - 10, finalY);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(...GREEN);
+  doc.text('TOTAL:', pageW - 10 - doc.getTextWidth(totalStr) - 18, finalY + 7);
+  doc.text(totalStr, pageW - 10, finalY + 7, { align: 'right' });
+
+  // Pie
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(7);
+  doc.setTextColor(...GRAY);
+  doc.text('¡Gracias por tu compra!', pageW / 2, finalY + 16, { align: 'center' });
+
+  const clienteNombre = $('nv-cliente').value.trim().replace(/\s+/g, '_') || 'cliente';
+  doc.save(`cuenta_${clienteNombre}_${$('nv-fecha').value || 'hoy'}.pdf`);
 }
 
 async function fetchGananciasChart() {
